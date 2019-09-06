@@ -1,29 +1,45 @@
+import os
+import boto3
 import numpy as np
 import pandas as pd
-import tensorflow
 import matplotlib as plt
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Activation
-from tensorflow.keras import models, layers
-from tensorflow.tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.keras.utils import np_utils
-from tensorflow.keras import optimizers
-from tensorflow.keras import metrics
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, Activation
+from keras import models, layers
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
-from sklearn.metrics import log_loss, roc_curve, auc
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.optimizers import SGD
+from keras.utils import to_categorical
+from keras.optimizers import SGD
+from keras import metrics
+import tensorflow as tf
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, RandomizedSearchCV
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.utils import np_utils
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, Dropout, Activation, Conv2D,MaxPooling2D, Flatten
+
+from keras.utils import np_utils
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Dropout, Activation, Conv2D,MaxPooling2D, Flatten
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc
+
+aws_access =  os.environ['aws_access_key_id']
+aws_secret =  os.environ['aws_secret_access_key']
+print("aws credentials: %s" % aws_access)
+print("aws credentials: %s" % aws_secret)
+s3 = boto3.client('s3',aws_access_key_id = aws_access,aws_secret_access_key = aws_secret)
+s3.download_file('kubeflow-datareply','dataclean.csv','dataclean.csv')
+
+df=pd.read_csv("dataclean.csv", sep=',' )
 
 #Baseline model classifier
 df1 = df[[ 'Age', 'Family_Diabetes','Family_Size','Systolic_BP1', 'Diastolic_BP1', 'Systolic_BP2',
@@ -50,6 +66,7 @@ df1 = df[[ 'Age', 'Family_Diabetes','Systolic_BP1', 'Systolic_BP2',
           'Insulin', 'Cholesterol','Vitamin_B12','Diabetes']]
 df1.shape #(5011, 21)
 """
+
 
 df1 = df1[df1.Diabetes != 3]
 df1.loc[:, 'Diabetes'].replace([2], [0], inplace=True)
@@ -160,7 +177,8 @@ Feature ranking:
 #Plotting the rankings
 plt.subplots(figsize=(15,8))
 sns.barplot(importances, feature_names, palette='inferno')
-
+plt.title('Feature Rankings')
+plt.savefig('featurerankings.png', dpi=400, bbox_inches='tight')
 
 #Testing
 y_predRF = clf.predict(x_test)
