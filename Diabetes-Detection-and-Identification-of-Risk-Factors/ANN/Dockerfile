@@ -1,4 +1,4 @@
-FROM python:3.70-alpine
+FROM python:3.7.0
 
 COPY . /src
 
@@ -6,4 +6,4 @@ WORKDIR /src
 
 RUN pip install -r requirements.txt
 
-CMD ["python", "ANN.py"]
+CMD ["python3", "ANN.py"]
