@@ -1,9 +1,9 @@
-FROM python:3.70-alpine
+FROM python:3.7.0
 
 COPY . /src
 
 WORKDIR /src
 
-RUN pip install -r requirements.txt
+RUN pip install -U -r requirements.txt
 
-CMD ["python", "RFclassifier.py"]
+CMD ["python3", "RFclassifier.py"]
