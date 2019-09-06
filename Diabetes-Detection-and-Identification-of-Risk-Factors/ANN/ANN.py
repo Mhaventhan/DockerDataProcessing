@@ -1,34 +1,51 @@
+import os
+import boto3
 import numpy as np
 import pandas as pd
-import tensorflow
 import matplotlib as plt
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Activation
-from tensorflow.keras import models, layers
-from tensorflow.tensorflow.keras.wrappers.scikit_learn import KerasClassifier
-from tensorflow.keras.utils import np_utils
-from tensorflow.keras import optimizers
-from tensorflow.keras import metrics
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+import tensorflow as tf
+from keras.models import Sequential
+from keras.callbacks import EarlyStopping
+from keras.layers import Dense, Dropout, Activation
+from keras import models, layers
+from keras.wrappers.scikit_learn import KerasClassifier
+from keras.utils import np_utils
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score
-from sklearn.metrics import log_loss, roc_curve, auc
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, LabelEncoder
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.optimizers import SGD
+from keras.utils import to_categorical
+from keras import optimizers
+from keras import metrics
+import tensorflow as tf
 from sklearn.model_selection import StratifiedShuffleSplit, GridSearchCV, RandomizedSearchCV
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.utils import np_utils
-from tensorflow.keras.models import Sequential, load_model
-from tensorflow.keras.layers import Dense, Dropout, Activation, Conv2D,MaxPooling2D, Flatten
+
+from keras.utils import np_utils
+from keras.models import Sequential, load_model
+from keras.layers import Dense, Dropout, Activation, Conv2D,MaxPooling2D, Flatten
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
 
-df=pd.read_csv("data_clean.csv", sep=';')
-df = df.drop(['Unnamed: 0'],axis=1)
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score, precision_score, recall_score, roc_curve, auc
+
+aws_access =  os.environ['aws_access_key_id']
+aws_secret =  os.environ['aws_secret_access_key']
+print("aws credentials: %s" % aws_access)
+print("aws credentials: %s" % aws_secret)
+s3 = boto3.client('s3',aws_access_key_id = aws_access,aws_secret_access_key = aws_secret)
+s3.download_file('kubeflow-datareply','dataclean.csv','dataclean.csv')
+
+df=pd.read_csv("dataclean.csv", sep=',' )
+
+
 cols = list(df)
-df.shape #(5011, 48)
+#df.shape #(5011, 48)
 """
 df1 = df[['Age', 'Family_Diabetes','Family_Size','Systolic_BP1', 'Diastolic_BP1', 'Systolic_BP2',
           'Diastolic_BP2', 'Weight', 'Height', 'BodyMassIndex','GripStrength_left',
@@ -39,18 +56,16 @@ df1 = df[['Age', 'Family_Diabetes','Family_Size','Systolic_BP1', 'Diastolic_BP1'
 """
 df1 = df[[ 'Age', 'Family_Diabetes','Systolic_BP1', 'Systolic_BP2',
           'Weight', 'Height', 'BodyMassIndex','GripStrength_left',
-          'GripStrength_right', 'Albumin', 'Creatinine', 'Globulin','Glucose',
-          'White_blood_cells', 'Red_blood_cells', 'Hemoglobin', 'Blood_platelets',
-          'Insulin', 'Cholesterol','Vitamin_B12','Diabetes']]
+          'GripStrength_right', 'Albumin', 'Creatinine', 'Globulin', 'Glucose', 'White_blood_cells', 'Red_blood_cells', 'Hemoglobin', 'Blood_platelets', 'Insulin', 'Cholesterol','Vitamin_B12','Diabetes']]
 
-df1.shape #(5011, 31)
+#df1.shape #(5011, 31)
 
 df1 = df1[df1.Diabetes != 3]
 df1.loc[:, 'Diabetes'].replace([2], [0], inplace=True)
-df1.shape #(4885, 31)
+#df1.shape #(4885, 31)
 
 df1.dropna(axis=0)
-df1.shape #(4885, 31)
+#df1.shape #(4885, 31)
 
 X = df1.values[:, 0:20]
 X = np.array(X)
@@ -58,8 +73,8 @@ X = X[:, ~np.isnan(X).any(axis=0)]
 Y = np.array(df1['Diabetes'])
 Y = Y[:, ~np.isnan(Y).any(axis=0)]
 
-X.shape #(4885, 30)
-Y.shape #(4885, 1)
+#X.shape #(4885, 30)
+#Y.shape #(4885, 1)
 
 #Building the Neural Network classifier
 sc = StandardScaler()
@@ -82,16 +97,14 @@ classifier.add(Dropout(0.5))
 classifier.add(Dense(1, activation='sigmoid', kernel_initializer='random_normal'))
 
 #Compiling the neural network
-adam=optimizers.Adam(lr=0.0001, amsgrad=False)
+adam = optimizers.Adam(lr=0.0001, amsgrad=False)
 classifier.compile(optimizer = adam , loss='binary_crossentropy', metrics =['accuracy'])
 classifier.summary()
 
 #Fitting the data to the training dataset
 
-early_stp = EarlyStopping(monitor='val_loss', min_delta=0, patience=25, verbose=0, mode='auto',
-                        baseline=None, restore_best_weights=True)
-history = classifier.fit(X_train, y_train, validation_split=0.33, epochs=200, batch_size=10,
-                         verbose=0, callbacks=[early_stp])
+early_stp = EarlyStopping(monitor='val_loss', min_delta=0, patience=25, verbose=0, mode='auto', baseline=None, restore_best_weights=True)
+history = classifier.fit(X_train, y_train, validation_split=0.33, epochs=200, batch_size=10, verbose=0, callbacks=[early_stp])
 
 # summarize history for accuracy
 plt.plot(history.history['acc'])
@@ -145,7 +158,6 @@ roc_auc = auc(fpr,tpr)
 plt.plot(fpr,tpr,'g',label='Optimised Network AUC = %0.2f'% roc_auc)
 plt.legend(loc='lower right')
 plt.plot([0,1],[0,1],'k--')
-
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.savefig('ROC.png', dpi=300, bbox_inches='tight')
