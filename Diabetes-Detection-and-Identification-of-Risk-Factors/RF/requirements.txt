@@ -5,3 +5,5 @@ pandas
 scikit-learn
 matplotlib
 keras
+boto3
+seaborn
